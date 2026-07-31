@@ -80,6 +80,15 @@ agent = Agent(
 print(agent.run("What is 21 + 21?"))
 ```
 
+## Web UI (Streamlit)
+
+A chat frontend over the same `Agent`. Pick provider/model, edit the system
+prompt, toggle tools and memory, and watch each turn's tool calls inline.
+
+```bash
+streamlit run app.py
+```
+
 ## Public API
 
 | Name | Purpose |

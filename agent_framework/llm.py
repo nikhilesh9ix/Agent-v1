@@ -53,6 +53,25 @@ DEFAULT_MODEL = os.getenv("LLM_MODEL") or os.getenv("OPENAI_MODEL") or _CFG["def
 DEFAULT_EMBED_MODEL = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
 
 
+def configure(provider: str | None = None, model: str | None = None) -> None:
+    """Switch provider and/or default model at runtime (used by the UI).
+
+    Updates module state and clears the cached client so the next call talks to
+    the newly selected provider. The matching API key must be present in the env.
+    """
+    global PROVIDER, _CFG, DEFAULT_MODEL
+    if provider:
+        provider = provider.lower()
+        if provider not in _PROVIDERS:
+            raise ValueError(f"Unknown provider {provider!r}. Options: {list(_PROVIDERS)}")
+        PROVIDER = provider
+        _CFG = _PROVIDERS[provider]
+        DEFAULT_MODEL = model or _CFG["default_model"]
+        get_client.cache_clear()
+    elif model:
+        DEFAULT_MODEL = model
+
+
 @lru_cache(maxsize=1)
 def get_client() -> OpenAI:
     """Return a process-wide singleton chat client for the active provider."""
