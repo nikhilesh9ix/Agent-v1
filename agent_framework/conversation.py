@@ -1,4 +1,4 @@
-"""Phase 2: the ConversationManager.
+"""The ConversationManager.
 
 The API is stateless — it forgets everything between calls. So *someone* has to
 hold the running conversation and resend it every time. That someone is this

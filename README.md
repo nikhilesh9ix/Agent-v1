@@ -1,67 +1,64 @@
-# Agent-v1 — an agent framework from scratch
+# Agent-v1
 
-An LLM **agent framework built from scratch** — the planning loop, the
-tool-calling protocol, and a layered memory system — with **no** LangChain,
-CrewAI, LlamaIndex, or any agent library. The point is to see exactly what those
-frameworks do under the hood: an agent is a `while`-loop around an LLM, wired to
-tools and memory. That's it. This repo builds that, piece by piece.
+A small LLM **agent framework built from scratch** — the ReAct planning loop, a
+tool-calling protocol, and layered memory — with no LangChain, CrewAI, or
+LlamaIndex. An agent is a `while`-loop around an LLM wired to tools and memory;
+this implements exactly that, and nothing you can't read in an afternoon.
 
-## What's inside
+Works with **OpenAI or Groq** (same OpenAI-compatible protocol), ships a
+**Streamlit** chat UI, and comes with a test suite.
+
+## Layout
 
 ```
 agent_framework/
-├── llm.py            # one shared OpenAI client (chat + embeddings)
+├── llm.py            # one shared client (chat + embeddings), provider switch
 ├── conversation.py   # ConversationManager: stateful multi-turn chat
 ├── tools.py          # Tool, ToolRegistry, @tool decorator (schema from type hints)
 ├── builtin_tools.py  # datetime / unit conversion / file read / FX rate
 ├── agent.py          # Agent: the ReAct loop, with optional memory
 └── memory/
     ├── base.py           # Memory ABC (add / retrieve)
-    ├── sqlite_memory.py  # episodic  — recent run summaries
-    └── chroma_memory.py  # semantic  — facts by embedding similarity
-examples/              # one runnable script per phase, plus demo.py
+    ├── sqlite_memory.py  # episodic — recent run summaries
+    └── chroma_memory.py  # semantic — facts by embedding similarity
+app.py                # Streamlit chat frontend
+examples/             # quickstart.py, custom_agent.py
+tests/                # pytest suite (no network required)
 ```
 
-## Setup
+## Install
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate         # Windows  (source .venv/bin/activate on macOS/Linux)
-pip install -r requirements.txt
-copy .env.example .env          # then add your key(s)
+.venv\Scripts\activate            # Windows  (source .venv/bin/activate elsewhere)
+pip install -e ".[semantic,app]"  # core + ChromaDB + Streamlit
+cp .env.example .env               # then add your key(s)
 ```
 
-### Providers (OpenAI or Groq)
+### Providers
 
-Groq and OpenAI both speak the OpenAI Chat Completions protocol, so one `openai`
-SDK client drives either — pick with `LLM_PROVIDER` in `.env`:
+Groq and OpenAI both speak the OpenAI Chat Completions protocol, so one client
+drives either — select with `LLM_PROVIDER` in `.env`:
 
 ```ini
-LLM_PROVIDER=groq                       # or: openai
-GROQ_API_KEY=gsk_...                    # console.groq.com/keys
-LLM_MODEL=llama-3.3-70b-versatile       # optional; sensible default per provider
+LLM_PROVIDER=groq                   # or: openai
+GROQ_API_KEY=gsk_...                # console.groq.com/keys
+LLM_MODEL=llama-3.3-70b-versatile   # optional; sensible default per provider
 ```
 
-Groq has **no embeddings endpoint**, so *semantic* (vector) memory always uses
+Groq has no embeddings endpoint, so *semantic* (vector) memory always uses
 OpenAI embeddings and needs `OPENAI_API_KEY` even under `LLM_PROVIDER=groq`.
-Chat, tool calling, the agent loop, and *episodic* (SQLite) memory all work on
-Groq alone.
+Chat, tool calling, the agent loop, and *episodic* (SQLite) memory work on Groq
+alone.
 
-Or install the package itself:
-
-```bash
-pip install -e .                # core
-pip install -e ".[semantic]"    # + ChromaDB for semantic memory
-```
-
-## Use it
+## Usage
 
 ```python
 from agent_framework import Agent, ToolRegistry, SQLiteMemory
 
 tools = ToolRegistry()
 
-@tools.tool                      # schema is inferred from type hints + docstring
+@tools.tool                      # schema inferred from type hints + docstring
 def add(a: int, b: int) -> str:
     """Add two integers.
 
@@ -80,67 +77,56 @@ agent = Agent(
 print(agent.run("What is 21 + 21?"))
 ```
 
-## Web UI (Streamlit)
+Runnable examples: [`examples/quickstart.py`](examples/quickstart.py) (built-in
+tools + memory) and [`examples/custom_agent.py`](examples/custom_agent.py) (a
+code-review agent with custom tools).
 
-A chat frontend over the same `Agent`. Pick provider/model, edit the system
-prompt, toggle tools and memory, and watch each turn's tool calls inline.
+```bash
+python examples/quickstart.py
+python examples/custom_agent.py
+```
+
+## Web UI
 
 ```bash
 streamlit run app.py
 ```
+
+Pick provider/model, edit the system prompt, toggle tools and memory, and watch
+each turn's tool calls render inline.
 
 ## Public API
 
 | Name | Purpose |
 | --- | --- |
 | `Agent` | The ReAct loop. `run(user_input) -> str`, `reset()`. |
-| `ToolRegistry` | Register / advertise / dispatch tools. `@registry.tool` decorator. |
+| `ToolRegistry` | Register / advertise / dispatch tools; `@registry.tool`. |
 | `tool`, `build_tool_from_function` | Build a tool schema from a function's type hints. |
-| `ConversationManager` | Plain stateful chat, no tools (Phase 2). |
+| `ConversationManager` | Plain stateful chat, no tools. |
 | `Memory` | Abstract base: `add(text, metadata)`, `retrieve(query, k)`. |
 | `SQLiteMemory` | Episodic memory (recent summaries). |
 | `ChromaMemory` | Semantic memory (vector similarity; needs `chromadb`). |
 
-## Build order (and how to follow it)
-
-Each phase is a commit and a runnable example. Read them in order:
-
-| Phase | Idea | Run |
-| --- | --- | --- |
-| 1 | Raw stateless API call | `python examples/phase1_raw_call.py` |
-| 2 | Multi-turn conversation state | `python examples/phase2_conversation.py` |
-| 3 | Tool calling (delegation protocol) | `python examples/phase3_tools.py` |
-| 4 | The agent loop | `python examples/phase4_agent.py` |
-| 5 | Long-term memory | `python examples/phase5_memory.py` |
-| 6 | Reusable package + demo | `python examples/demo.py` |
-
-## The "am I done?" demo
-
-`examples/demo.py` exercises all five completion criteria: general reasoning, an
-external tool lookup, memory that survives a restart (`--recall`), and graceful
-tool-failure handling. `examples/custom_agent.py` proves reusability by building
-a *different* agent (a code reviewer) using only the public API.
-
-```bash
-python examples/demo.py
-python examples/demo.py --recall     # memory persists across processes
-python examples/custom_agent.py
-```
-
 ## Design notes
 
-- **The API is stateless.** History lives in *our* `messages` list and is resent
-  every call. That single fact drives Phases 2–5.
+- **The API is stateless.** History lives in the `Agent`'s own `messages` list
+  and is resent on every call.
 - **The model never runs code.** It requests a tool call; `ToolRegistry.dispatch`
-  runs it and returns a string — turning unknown tools, bad arguments, and tool
-  exceptions into messages the agent can recover from instead of crashes.
+  runs it and returns a string — unknown tools, bad arguments, and tool
+  exceptions all become messages the agent can recover from, not crashes.
 - **`max_iterations`** caps a stuck agent. On reaching it, the agent asks for a
-  best-effort answer with tools off rather than returning nothing.
-- **Two memories, one interface.** Episodic (recency, SQLite) and semantic
-  (similarity, Chroma) both implement the `Memory` ABC, so the Agent depends on
+  best-effort answer with tools disabled rather than returning nothing.
+- **Two backends, one interface.** Episodic (recency, SQLite) and semantic
+  (similarity, Chroma) both implement the `Memory` ABC, so the `Agent` depends on
   the interface, not the backend.
 
-## Cost
+## Tests
 
-`gpt-4o-mini` ≈ $0.15 / 1M input tokens. A full agent run is usually < $0.01.
-Budget a few dollars for the whole project.
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE).

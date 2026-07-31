@@ -1,16 +1,11 @@
-"""Proof of reusability: a *different* agent, using only the public API.
+"""A code-review agent built entirely on the public API.
 
-A code-review assistant with its own custom tools — registered via the @tool
-decorator with schemas inferred from type hints, no framework internals touched.
-This is criterion 5: someone can build a new agent from the public interface.
+Custom tools are registered with the @tool decorator, which infers their JSON
+schema from type hints and docstrings — no framework internals needed. Run with
+the package installed (`pip install -e .`):
 
     python examples/custom_agent.py
 """
-
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_framework import Agent, ToolRegistry
 

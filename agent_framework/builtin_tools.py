@@ -1,10 +1,9 @@
 """A handful of ready-made tools, plus a registry that bundles them.
 
-These show the range an agent needs: a pure-local fact (the clock), a
-computation (unit conversion), a filesystem read (which can fail), and a call to
-an external API (which can also fail). Each has a hand-written JSON Schema so you
-can see exactly what the model reads; Phase 6 adds a @tool decorator that
-generates these from type hints instead.
+These cover the range an agent needs: a pure-local fact (the clock), a
+computation (unit conversion), a filesystem read (which can fail), and an
+external API call (which can also fail). Schemas are written out explicitly
+here; the @tool decorator in tools.py can infer them from type hints instead.
 """
 
 from __future__ import annotations

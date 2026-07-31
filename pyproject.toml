@@ -18,9 +18,17 @@ dependencies = [
 [project.optional-dependencies]
 # Semantic (vector) memory. Everything else works without it.
 semantic = ["chromadb>=0.5.0"]
+# Streamlit chat frontend (app.py).
+app = ["streamlit>=1.30.0"]
+# Test suite.
+dev = ["pytest>=8.0"]
 
 [project.urls]
 Repository = "https://github.com/nikhilesh9ix/Agent-v1"
 
 [tool.setuptools.packages.find]
 include = ["agent_framework*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

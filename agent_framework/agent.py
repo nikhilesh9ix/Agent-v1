@@ -1,4 +1,4 @@
-"""Phase 4: the Agent — a loop around the LLM.
+"""The Agent — a loop around the LLM.
 
 An agent is not a smarter model; it's a while-loop with an LLM inside, wired to
 tools. Each turn the model either (a) asks for a tool call, which we run and feed

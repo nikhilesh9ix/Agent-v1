@@ -1,4 +1,4 @@
-"""Phase 3: the tool-calling machinery.
+"""The tool-calling machinery.
 
 An LLM can't run code. Given a list of tool *descriptions* (JSON Schema), it can
 only reply "I'd like to call function X with arguments Y". Our code is the worker
@@ -122,7 +122,7 @@ class ToolRegistry:
         return result if isinstance(result, str) else json.dumps(result)
 
 
-# --- schema inference from type hints (Phase 6) ---------------------------
+# --- schema inference from type hints -------------------------------------
 
 _PY_TO_JSON = {
     str: "string", int: "integer", float: "number",
