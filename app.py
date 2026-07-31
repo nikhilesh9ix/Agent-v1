@@ -72,23 +72,23 @@ def build_agent(provider: str, model: str, system_prompt: str, use_tools: bool,
 
 def extract_tool_events(messages: list[dict], start: int) -> list[dict]:
     """Pull (name, args, result) for tool calls made since index `start`."""
-    # Map tool_call_id -> result content from the tool-role messages.
-    results = {
-        m.get("tool_call_id"): m.get("content", "")
-        for m in messages[start:]
-        if m.get("role") == "tool"
-    }
-    events = []
-    for m in messages[start:]:
-        if m.get("role") == "assistant" and m.get("tool_calls"):
-            for call in m["tool_calls"]:
-                fn = call["function"]
-                events.append({
-                    "name": fn["name"],
-                    "args": fn.get("arguments", "{}"),
-                    "result": results.get(call["id"], ""),
-                })
-    return events
+    results = {m.get("tool_call_id"): m.get("content", "")
+               for m in messages[start:] if m.get("role") == "tool"}
+    return [
+        {"name": c["function"]["name"], "args": c["function"].get("arguments", "{}"),
+         "result": results.get(c["id"], "")}
+        for m in messages[start:] if m.get("role") == "assistant" and m.get("tool_calls")
+        for c in m["tool_calls"]
+    ]
+
+
+def render_tools(events: list[dict]) -> None:
+    if not events:
+        return
+    with st.expander(f"🔧 {len(events)} tool call(s)"):
+        for ev in events:
+            st.markdown(f"**{ev['name']}**")
+            st.code(f"args: {ev['args']}\nresult: {ev['result']}", language="text")
 
 
 # --- sidebar: configuration ----------------------------------------------
@@ -138,11 +138,7 @@ st.caption(f"from-scratch agent framework · **{provider}** · `{model}`")
 for turn in st.session_state.history:
     with st.chat_message(turn["role"]):
         st.markdown(turn["content"])
-        if turn.get("tools"):
-            with st.expander(f"🔧 {len(turn['tools'])} tool call(s)"):
-                for ev in turn["tools"]:
-                    st.markdown(f"**{ev['name']}**")
-                    st.code(f"args: {ev['args']}\nresult: {ev['result']}", language="text")
+        render_tools(turn.get("tools", []))
 
 prompt = st.chat_input("Ask the agent…")
 if prompt:
@@ -160,10 +156,6 @@ if prompt:
                 answer = f"⚠️ Error: {type(e).__name__}: {e}"
         events = extract_tool_events(agent.messages, start)
         st.markdown(answer)
-        if events:
-            with st.expander(f"🔧 {len(events)} tool call(s)"):
-                for ev in events:
-                    st.markdown(f"**{ev['name']}**")
-                    st.code(f"args: {ev['args']}\nresult: {ev['result']}", language="text")
+        render_tools(events)
 
     st.session_state.history.append({"role": "assistant", "content": answer, "tools": events})
