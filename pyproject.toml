@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-framework-v1"
+version = "0.1.0"
+description = "An LLM agent framework built from scratch: ReAct loop, tool calling, and layered memory."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Kuppili Nikhilesh Raju" }]
+dependencies = [
+    "openai>=1.30.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+# Semantic (vector) memory. Everything else works without it.
+semantic = ["chromadb>=0.5.0"]
+
+[project.urls]
+Repository = "https://github.com/nikhilesh9ix/Agent-v1"
+
+[tool.setuptools.packages.find]
+include = ["agent_framework*"]

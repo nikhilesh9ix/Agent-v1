@@ -12,9 +12,11 @@ message the agent can recover from, not a crash.
 
 from __future__ import annotations
 
+import inspect
 import json
+import re
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, get_type_hints
 
 
 @dataclass
@@ -62,6 +64,21 @@ class ToolRegistry:
             raise ValueError(f"Tool {tool.name!r} already registered")
         self._tools[tool.name] = tool
 
+    def tool(self, func: Callable) -> Callable:
+        """Decorator: register `func` as a tool, schema inferred from its hints.
+
+            registry = ToolRegistry()
+
+            @registry.tool
+            def add(a: int, b: int) -> str:
+                '''Add two integers.'''
+                return str(a + b)
+
+        The function is returned unchanged, so it stays directly callable.
+        """
+        self.add(build_tool_from_function(func))
+        return func
+
     def names(self) -> list[str]:
         return list(self._tools)
 
@@ -99,3 +116,70 @@ class ToolRegistry:
             return f"ERROR: tool {name!r} failed: {type(e).__name__}: {e}"
 
         return result if isinstance(result, str) else json.dumps(result)
+
+
+# --- schema inference from type hints (Phase 6) ---------------------------
+
+_PY_TO_JSON = {
+    str: "string", int: "integer", float: "number",
+    bool: "boolean", list: "array", dict: "object",
+}
+
+
+def _parse_arg_docs(docstring: str) -> dict[str, str]:
+    """Pull per-arg descriptions from a Google-style `Args:` block, if present."""
+    if not docstring or "Args:" not in docstring:
+        return {}
+    args_block = docstring.split("Args:", 1)[1]
+    # Stop at the next section header (Returns:, Raises:, ...).
+    args_block = re.split(r"\n\s*\w+:\s*\n", "\n" + args_block, maxsplit=1)[0]
+    docs: dict[str, str] = {}
+    for match in re.finditer(r"^\s*(\w+)\s*(?:\([^)]*\))?:\s*(.+)$", args_block, re.MULTILINE):
+        docs[match.group(1)] = match.group(2).strip()
+    return docs
+
+
+def build_tool_from_function(func: Callable, name: str | None = None,
+                             description: str | None = None) -> Tool:
+    """Construct a Tool by inspecting a function's signature, hints, and docstring.
+
+    This is what removes the hand-written JSON Schema: the parameter types come
+    from annotations, `required` from which params lack defaults, and the
+    descriptions from the docstring's summary line and Args block.
+    """
+    sig = inspect.signature(func)
+    hints = get_type_hints(func)
+    doc = inspect.getdoc(func) or ""
+    summary = doc.split("\n\n", 1)[0].replace("\n", " ").strip()
+    arg_docs = _parse_arg_docs(doc)
+
+    properties: dict[str, dict] = {}
+    required: list[str] = []
+    for pname, param in sig.parameters.items():
+        if pname in ("self", "cls"):
+            continue
+        json_type = _PY_TO_JSON.get(hints.get(pname, str), "string")
+        prop = {"type": json_type}
+        if pname in arg_docs:
+            prop["description"] = arg_docs[pname]
+        properties[pname] = prop
+        if param.default is inspect.Parameter.empty:
+            required.append(pname)
+
+    return Tool(
+        name=name or func.__name__,
+        description=description or summary or func.__name__,
+        parameters={"type": "object", "properties": properties, "required": required},
+        func=func,
+    )
+
+
+def tool(func: Callable) -> Callable:
+    """Standalone decorator: attach an inferred Tool to a function as `.tool_def`.
+
+    Use when you want to build the Tool now but register it into a chosen
+    ToolRegistry later (`registry.add(func.tool_def)`). To register in one step,
+    prefer the bound `ToolRegistry.tool` decorator instead.
+    """
+    func.tool_def = build_tool_from_function(func)  # type: ignore[attr-defined]
+    return func
