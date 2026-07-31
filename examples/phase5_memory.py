@@ -8,7 +8,10 @@ invocation is a *fresh process* yet still recalls what the first one learned —
 proving the memory outlives the program, not just the loop.
 """
 
+import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_framework.agent import Agent
 from agent_framework.builtin_tools import default_registry

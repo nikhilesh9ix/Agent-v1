@@ -7,6 +7,11 @@ This is criterion 5: someone can build a new agent from the public interface.
     python examples/custom_agent.py
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from agent_framework import Agent, ToolRegistry
 
 tools = ToolRegistry()

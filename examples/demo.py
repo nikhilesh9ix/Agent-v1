@@ -11,7 +11,10 @@ Exercises the five "how to know you're done" criteria:
     python examples/demo.py --recall   # prove memory survives a restart
 """
 
+import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_framework import Agent, SQLiteMemory
 from agent_framework.builtin_tools import default_registry

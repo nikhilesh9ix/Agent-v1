@@ -28,8 +28,24 @@ examples/              # one runnable script per phase, plus demo.py
 python -m venv .venv
 .venv\Scripts\activate         # Windows  (source .venv/bin/activate on macOS/Linux)
 pip install -r requirements.txt
-copy .env.example .env          # then add your OPENAI_API_KEY
+copy .env.example .env          # then add your key(s)
 ```
+
+### Providers (OpenAI or Groq)
+
+Groq and OpenAI both speak the OpenAI Chat Completions protocol, so one `openai`
+SDK client drives either — pick with `LLM_PROVIDER` in `.env`:
+
+```ini
+LLM_PROVIDER=groq                       # or: openai
+GROQ_API_KEY=gsk_...                    # console.groq.com/keys
+LLM_MODEL=llama-3.3-70b-versatile       # optional; sensible default per provider
+```
+
+Groq has **no embeddings endpoint**, so *semantic* (vector) memory always uses
+OpenAI embeddings and needs `OPENAI_API_KEY` even under `LLM_PROVIDER=groq`.
+Chat, tool calling, the agent loop, and *episodic* (SQLite) memory all work on
+Groq alone.
 
 Or install the package itself:
 

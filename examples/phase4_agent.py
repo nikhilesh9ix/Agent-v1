@@ -6,6 +6,11 @@ Ask a question that needs a tool (or several) and watch the agent reason, call
 tools, observe results, and answer — no manual round-trip wiring.
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from agent_framework.agent import Agent
 from agent_framework.builtin_tools import default_registry
 

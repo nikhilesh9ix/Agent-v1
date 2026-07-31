@@ -104,6 +104,10 @@ class ToolRegistry:
             except json.JSONDecodeError as e:
                 return f"ERROR: could not parse arguments for {name!r}: {e}"
 
+        # Some models emit null/None for a no-argument tool — treat as empty.
+        if arguments is None:
+            arguments = {}
+
         if not isinstance(arguments, dict):
             return f"ERROR: arguments for {name!r} must be a JSON object"
 

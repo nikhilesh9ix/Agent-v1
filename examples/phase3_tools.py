@@ -10,6 +10,10 @@ This is the mechanism the Agent loop (Phase 4) will automate. Steps:
 """
 
 import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_framework import llm
 from agent_framework.builtin_tools import default_registry
@@ -30,8 +34,8 @@ def main() -> None:
         print("Model answered directly:", msg.content)
         return
 
-    # Record the assistant's tool-call turn verbatim (the API requires this).
-    messages.append(msg.model_dump())
+    # Record the assistant's tool-call turn (provider-safe serialization).
+    messages.append(llm.assistant_message_dict(msg))
 
     for call in msg.tool_calls:
         name = call.function.name

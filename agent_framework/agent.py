@@ -83,7 +83,8 @@ class Agent:
     def _handle_tool_calls(self, message) -> None:
         """Run every tool the model requested and append the results."""
         # The assistant's tool-call turn must be in history before the results.
-        self.messages.append(message.model_dump())
+        # Use the provider-safe serializer (Groq rejects the SDK's extra fields).
+        self.messages.append(llm.assistant_message_dict(message))
         for call in message.tool_calls:
             name = call.function.name
             args = call.function.arguments

@@ -6,6 +6,11 @@ Watch it recall a fact stated three turns earlier. It works even though the API
 is stateless because ConversationManager resends the whole history each call.
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from agent_framework.conversation import ConversationManager
 
 
