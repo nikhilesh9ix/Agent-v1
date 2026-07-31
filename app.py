@@ -33,7 +33,16 @@ def available_providers() -> list[str]:
     return out
 
 
-DEFAULT_MODELS = {"groq": "llama-3.3-70b-versatile", "openai": "gpt-4o-mini"}
+# Known models per provider; first entry is the default.
+MODELS = {
+    "groq": [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "openai/gpt-oss-120b",
+        "moonshotai/kimi-k2-instruct",
+    ],
+    "openai": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"],
+}
 
 
 def build_agent(provider: str, model: str, system_prompt: str, use_tools: bool,
@@ -92,7 +101,7 @@ if not providers:
     st.stop()
 
 provider = st.sidebar.selectbox("Provider", providers, index=0)
-model = st.sidebar.text_input("Model", value=DEFAULT_MODELS[provider])
+model = st.sidebar.selectbox("Model", MODELS[provider])
 system_prompt = st.sidebar.text_area(
     "System prompt",
     value="You are a helpful assistant. Use tools when they improve accuracy.",
