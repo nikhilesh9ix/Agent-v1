@@ -18,8 +18,6 @@ agent_framework/
 ├── builtin_tools.py  # datetime / unit conversion / file read / FX rate
 └── agent.py          # Agent: the ReAct loop
 app.py                # Streamlit chat frontend
-examples/             # quickstart.py, custom_agent.py
-tests/                # pytest suite (no network required)
 ```
 
 ## Install
@@ -63,15 +61,6 @@ agent = Agent("You are a helpful assistant.", registry=tools)
 print(agent.run("What is 21 + 21?"))
 ```
 
-Runnable examples: [`examples/quickstart.py`](examples/quickstart.py) (built-in
-tools) and [`examples/custom_agent.py`](examples/custom_agent.py) (a code-review
-agent with custom tools).
-
-```bash
-python examples/quickstart.py
-python examples/custom_agent.py
-```
-
 ## Web UI
 
 ```bash
@@ -99,13 +88,6 @@ tool calls render inline.
   exceptions all become messages the agent can recover from, not crashes.
 - **`max_iterations`** caps a stuck agent. On reaching it, the agent asks for a
   best-effort answer with tools disabled rather than returning nothing.
-
-## Tests
-
-```bash
-pip install -e ".[dev]"
-pytest
-```
 
 ## License
 
