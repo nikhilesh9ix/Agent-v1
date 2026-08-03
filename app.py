@@ -3,7 +3,7 @@
     streamlit run app.py
 
 A thin UI over agent_framework.Agent: pick a provider/model, edit the system
-prompt, toggle tools and memory, and chat. Each assistant turn shows the tools
+prompt, toggle tools, and chat. Each assistant turn shows the tools
 the agent actually called, so you can watch the ReAct loop work.
 """
 
@@ -15,7 +15,7 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
-from agent_framework import Agent, SQLiteMemory, llm
+from agent_framework import Agent, llm
 from agent_framework.builtin_tools import default_registry
 
 load_dotenv()
@@ -45,28 +45,15 @@ MODELS = {
 }
 
 
-def build_agent(provider: str, model: str, system_prompt: str, use_tools: bool,
-                use_episodic: bool, use_semantic: bool, max_iter: int) -> Agent:
+def build_agent(provider: str, model: str, system_prompt: str,
+                use_tools: bool, max_iter: int) -> Agent:
     """Construct a fresh Agent for the chosen configuration."""
     llm.configure(provider=provider, model=model)
-    registry = default_registry() if use_tools else None
-
-    episodic = SQLiteMemory("streamlit_memory.db") if use_episodic else None
-    semantic = None
-    if use_semantic:
-        try:
-            from agent_framework import ChromaMemory
-            semantic = ChromaMemory()
-        except Exception as e:  # noqa: BLE001
-            st.sidebar.warning(f"Semantic memory unavailable: {e}")
-
     return Agent(
         system_prompt=system_prompt,
-        registry=registry,
+        registry=default_registry() if use_tools else None,
         model=model,
         max_iterations=max_iter,
-        episodic_memory=episodic,
-        semantic_memory=semantic,
     )
 
 
@@ -108,19 +95,13 @@ system_prompt = st.sidebar.text_area(
     height=120,
 )
 use_tools = st.sidebar.checkbox("Enable tools", value=True)
-use_episodic = st.sidebar.checkbox("Episodic memory (SQLite)", value=False)
-use_semantic = st.sidebar.checkbox(
-    "Semantic memory (Chroma, needs OpenAI key)",
-    value=False,
-    disabled=not os.getenv("OPENAI_API_KEY"),
-)
 max_iter = st.sidebar.slider("Max tool iterations", 1, 15, 8)
 
 if use_tools:
     st.sidebar.caption("Tools: " + ", ".join(default_registry().names()))
 
 # Rebuild the agent (and reset the chat) whenever the configuration changes.
-sig = (provider, model, system_prompt, use_tools, use_episodic, use_semantic, max_iter)
+sig = (provider, model, system_prompt, use_tools, max_iter)
 if st.session_state.get("sig") != sig:
     st.session_state.sig = sig
     st.session_state.agent = build_agent(*sig)

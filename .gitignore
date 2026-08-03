@@ -16,13 +16,6 @@ env/
 # Environment / secrets
 .env
 
-# Databases / vector store (local memory)
-*.db
-*.sqlite
-*.sqlite3
-chroma_db/
-.chroma/
-
 # IDE / OS
 .vscode/
 .idea/

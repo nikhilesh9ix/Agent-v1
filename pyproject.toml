@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agent-framework-v1"
 version = "0.1.0"
-description = "An LLM agent framework built from scratch: ReAct loop, tool calling, and layered memory."
+description = "An LLM agent framework built from scratch: ReAct loop and tool calling."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -16,8 +16,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Semantic (vector) memory. Everything else works without it.
-semantic = ["chromadb>=0.5.0"]
 # Streamlit chat frontend (app.py).
 app = ["streamlit>=1.30.0"]
 # Test suite.

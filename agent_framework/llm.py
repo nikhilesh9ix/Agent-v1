@@ -1,8 +1,7 @@
 """Shared LLM client. All provider/model/auth handling lives here.
 
 Groq and OpenAI both speak the OpenAI Chat Completions protocol, so one client
-drives either — selected with the LLM_PROVIDER env var. Groq has no embeddings
-endpoint, so embed() always uses OpenAI.
+drives either — selected with the LLM_PROVIDER env var.
 """
 
 from __future__ import annotations
@@ -27,7 +26,6 @@ if PROVIDER not in _PROVIDERS:
 
 _CFG = _PROVIDERS[PROVIDER]
 DEFAULT_MODEL = os.getenv("LLM_MODEL") or os.getenv("OPENAI_MODEL") or _CFG["default_model"]
-DEFAULT_EMBED_MODEL = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
 
 
 def configure(provider: str | None = None, model: str | None = None) -> None:
@@ -53,15 +51,6 @@ def get_client() -> OpenAI:
     return OpenAI(api_key=key, base_url=_CFG["base_url"])
 
 
-@lru_cache(maxsize=1)
-def get_embed_client() -> OpenAI:
-    """Embeddings client — always OpenAI (Groq has no embeddings endpoint)."""
-    key = os.getenv("OPENAI_API_KEY")
-    if not key:
-        raise RuntimeError("Embeddings require OPENAI_API_KEY (Groq has none).")
-    return OpenAI(api_key=key)
-
-
 def chat(messages: list[dict], model: str | None = None, **kwargs):
     """Chat Completions call. kwargs (tools, tool_choice, ...) pass straight through."""
     return get_client().chat.completions.create(
@@ -80,9 +69,3 @@ def assistant_message_dict(message) -> dict:
             for tc in message.tool_calls
         ]
     return data
-
-
-def embed(text: str, model: str | None = None) -> list[float]:
-    """Embed text into a vector (via OpenAI)."""
-    resp = get_embed_client().embeddings.create(model=model or DEFAULT_EMBED_MODEL, input=text)
-    return resp.data[0].embedding
