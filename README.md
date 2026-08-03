@@ -1,7 +1,7 @@
 # Agent-v1
 
-A small LLM **agent framework built from scratch** — the ReAct planning loop and
-a tool-calling protocol — with no LangChain, CrewAI, or LlamaIndex. An agent is a
+A small LLM **agent framework**, the ReAct planning loop and
+a tool-calling protocol. An agent is a
 `while`-loop around an LLM wired to tools; this implements exactly that, and
 nothing you can't read in an afternoon.
 
